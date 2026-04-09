@@ -18,6 +18,11 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  /* Custom admin sidebar tokens */
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-sidebar-text: var(--sidebar-text);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-muted: var(--sidebar-muted);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -79,8 +84,14 @@
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-border: oklch(0.18 0 0);  /* #262626 — dark sidebar border */
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Admin sidebar dark theme tokens */
+  --sidebar-bg: oklch(0.12 0 0);       /* #141414 */
+  --sidebar-text: oklch(0.85 0 0);     /* #D9D9D9 */
+  --sidebar-active: oklch(1 0 0);      /* #FFFFFF */
+  --sidebar-muted: oklch(0.55 0 0);    /* ~#8C8C8C */
 }
 
 .dark {
@@ -123,6 +134,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans), system-ui, sans-serif;
   }
   html {
     @apply font-sans;
