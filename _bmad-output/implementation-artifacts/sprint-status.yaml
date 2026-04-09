@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-09
-last_updated: 2026-04-09T22:00:00
+last_updated: 2026-04-09T23:30:00
 project: bestsolutions-cms
 project_key: NOKEY
 tracking_system: file-system
@@ -54,8 +54,8 @@ development_status:
   # ─── Epic 2: Projects Content Management ───
   epic-2: in-progress
   2-1-content-database-schema-and-rls-policies: review
-  2-2-categories-management: ready-for-dev
-  2-3-media-library-upload-view-and-delete: backlog
+  2-2-categories-management: review
+  2-3-media-library-upload-view-and-delete: review
   2-4-tiptapeditor-with-multi-locale-and-auto-save: backlog
   2-5-mediapicker-connect-editor-to-media-library: backlog
   2-6-projects-list-and-create: backlog
