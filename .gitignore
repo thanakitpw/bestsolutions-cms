@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# AI/IDE tooling (local only)
+.agents/
+.windsurf/
+.mcp.json
+skills-lock.json
