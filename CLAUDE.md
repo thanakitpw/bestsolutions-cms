@@ -19,7 +19,7 @@
 ## Tech Stack
 | Layer | เทคโนโลยี |
 |-------|-----------|
-| Framework | Next.js 15 (App Router) |
+| Framework | Next.js 14 (App Router) |
 | Styling | Tailwind CSS + shadcn/ui |
 | Database | Supabase (PostgreSQL) + RLS |
 | Auth | Supabase Auth |
@@ -53,28 +53,22 @@ API Routes:
 /api/auth/logout
 ```
 
-Auth middleware อยู่ที่ `src/middleware.ts` (เปลี่ยนชื่อจาก proxy.ts ให้ตรง Next.js convention)
+Auth middleware อยู่ที่ `src/proxy.ts`
 
 ---
 
 ## สถานะปัจจุบัน
 
-> ⚠️ **Planning phase — ยังไม่มี codebase** (ไม่มี package.json, src/, หรือโค้ดใดๆ)
-
 | Component | สถานะ |
 |-----------|-------|
-| Project Plan & Schema Design | ✅ |
-| **Next.js project setup** | ❌ ยังไม่ได้สร้าง |
-| **shadcn/ui + Tiptap** | ❌ |
-| **Admin pages** | ❌ |
-| **API routes** | ❌ |
-| **Auth middleware** | ❌ |
-| **Supabase DB + Migrations** | ❌ รอ credentials |
+| Next.js setup + shadcn/ui | ✅ |
+| Admin pages (migrate จาก Twodesk) | ✅ build ผ่าน |
+| API routes | ✅ migrate แล้ว |
+| Auth middleware | ✅ |
+| **Supabase DB ใหม่ (multi-tenant)** | ❌ รอสร้าง |
 | **RLS Policies** | ❌ |
-| **tenant_id logic + feature flags** | ❌ |
-| **Categories per tenant** | ❌ |
-| **Dynamic pages** | ❌ |
-| **Public API (`/api/public/[tenant]/...`)** | ❌ |
+| **tenant_id logic ในทุก query** | ❌ |
+| **Public API (`/api/[tenant]/...`)** | ❌ |
 | **Super Admin (จัดการ tenants)** | ❌ |
 | **Deploy** | ❌ |
 
@@ -129,12 +123,10 @@ export async function getTenantId(request: Request): Promise<string> {
 
 ## การใช้ Skills
 - UI/UX: `ui-ux-pro-max`, `frontend-design`
-- Database: `postgres-best-practices`, `postgresql`, `database-design`
-- Supabase: `supabase-automation`
+- Database: `supabase-postgres-best-practices`
 - API: `api-design-principles`
-- Auth: `auth-implementation-patterns`
 - Next.js: `nextjs-best-practices`, `nextjs-app-router-patterns`
-- Deploy: `deployment-engineer`, `vercel-deployment`
+- Deploy: `deployment-engineer`
 
 ---
 
