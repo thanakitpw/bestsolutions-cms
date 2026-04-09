@@ -34,5 +34,33 @@ describe('database.types', () => {
     it('user_role includes editor', () => {
       expect(Constants.public.Enums.user_role).toContain('editor')
     })
+
+    it('category_type enum contains expected values', () => {
+      expect(Constants.public.Enums.category_type).toEqual(['project', 'article'])
+    })
+
+    it('category_type includes project', () => {
+      expect(Constants.public.Enums.category_type).toContain('project')
+    })
+
+    it('category_type includes article', () => {
+      expect(Constants.public.Enums.category_type).toContain('article')
+    })
+
+    it('page_type enum contains expected values', () => {
+      expect(Constants.public.Enums.page_type).toEqual(['home', 'about', 'contact'])
+    })
+
+    it('page_type includes home', () => {
+      expect(Constants.public.Enums.page_type).toContain('home')
+    })
+
+    it('page_type includes about', () => {
+      expect(Constants.public.Enums.page_type).toContain('about')
+    })
+
+    it('page_type includes contact', () => {
+      expect(Constants.public.Enums.page_type).toContain('contact')
+    })
   })
 })

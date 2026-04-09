@@ -14,6 +14,423 @@ export type Database = {
   }
   public: {
     Tables: {
+      articles: {
+        Row: {
+          category_id: string | null
+          content: Json | null
+          cover_image_url: string | null
+          created_at: string | null
+          deleted_at: string | null
+          excerpt: Json | null
+          id: string
+          published_at: string | null
+          seo_description: Json | null
+          seo_keywords: Json | null
+          seo_title: Json | null
+          slug: string
+          status: Database["public"]["Enums"]["content_status"] | null
+          tenant_id: string
+          title: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          content?: Json | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          excerpt?: Json | null
+          id?: string
+          published_at?: string | null
+          seo_description?: Json | null
+          seo_keywords?: Json | null
+          seo_title?: Json | null
+          slug: string
+          status?: Database["public"]["Enums"]["content_status"] | null
+          tenant_id: string
+          title?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          content?: Json | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          excerpt?: Json | null
+          id?: string
+          published_at?: string | null
+          seo_description?: Json | null
+          seo_keywords?: Json | null
+          seo_title?: Json | null
+          slug?: string
+          status?: Database["public"]["Enums"]["content_status"] | null
+          tenant_id?: string
+          title?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "articles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "articles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+          tenant_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: Json
+          slug: string
+          sort_order: number | null
+          tenant_id: string
+          type: Database["public"]["Enums"]["category_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: Json
+          slug: string
+          sort_order?: number | null
+          tenant_id: string
+          type: Database["public"]["Enums"]["category_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: Json
+          slug?: string
+          sort_order?: number | null
+          tenant_id?: string
+          type?: Database["public"]["Enums"]["category_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media_items: {
+        Row: {
+          alt_text: Json | null
+          created_at: string | null
+          filename: string
+          height: number | null
+          id: string
+          mime_type: string
+          public_url: string
+          size: number
+          storage_path: string
+          tenant_id: string
+          width: number | null
+        }
+        Insert: {
+          alt_text?: Json | null
+          created_at?: string | null
+          filename: string
+          height?: number | null
+          id?: string
+          mime_type: string
+          public_url: string
+          size: number
+          storage_path: string
+          tenant_id: string
+          width?: number | null
+        }
+        Update: {
+          alt_text?: Json | null
+          created_at?: string | null
+          filename?: string
+          height?: number | null
+          id?: string
+          mime_type?: string
+          public_url?: string
+          size?: number
+          storage_path?: string
+          tenant_id?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          is_archived: boolean | null
+          is_read: boolean | null
+          message: string
+          name: string
+          phone: string | null
+          project_type: string | null
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          is_archived?: boolean | null
+          is_read?: boolean | null
+          message: string
+          name: string
+          phone?: string | null
+          project_type?: string | null
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_archived?: boolean | null
+          is_read?: boolean | null
+          message?: string
+          name?: string
+          phone?: string | null
+          project_type?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pages: {
+        Row: {
+          content: Json | null
+          id: string
+          page_type: Database["public"]["Enums"]["page_type"]
+          seo_description: Json | null
+          seo_title: Json | null
+          tenant_id: string
+          title: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          content?: Json | null
+          id?: string
+          page_type: Database["public"]["Enums"]["page_type"]
+          seo_description?: Json | null
+          seo_title?: Json | null
+          tenant_id: string
+          title?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: Json | null
+          id?: string
+          page_type?: Database["public"]["Enums"]["page_type"]
+          seo_description?: Json | null
+          seo_title?: Json | null
+          tenant_id?: string
+          title?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          area: string | null
+          category_id: string | null
+          content: Json | null
+          cover_image_url: string | null
+          created_at: string | null
+          deleted_at: string | null
+          description: Json | null
+          gallery_urls: string[] | null
+          id: string
+          location: Json | null
+          published_at: string | null
+          seo_description: Json | null
+          seo_keywords: Json | null
+          seo_title: Json | null
+          slug: string
+          status: Database["public"]["Enums"]["content_status"] | null
+          tenant_id: string
+          title: Json | null
+          updated_at: string | null
+          year: number | null
+        }
+        Insert: {
+          area?: string | null
+          category_id?: string | null
+          content?: Json | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: Json | null
+          gallery_urls?: string[] | null
+          id?: string
+          location?: Json | null
+          published_at?: string | null
+          seo_description?: Json | null
+          seo_keywords?: Json | null
+          seo_title?: Json | null
+          slug: string
+          status?: Database["public"]["Enums"]["content_status"] | null
+          tenant_id: string
+          title?: Json | null
+          updated_at?: string | null
+          year?: number | null
+        }
+        Update: {
+          area?: string | null
+          category_id?: string | null
+          content?: Json | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: Json | null
+          gallery_urls?: string[] | null
+          id?: string
+          location?: Json | null
+          published_at?: string | null
+          seo_description?: Json | null
+          seo_keywords?: Json | null
+          seo_title?: Json | null
+          slug?: string
+          status?: Database["public"]["Enums"]["content_status"] | null
+          tenant_id?: string
+          title?: Json | null
+          updated_at?: string | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revisions: {
+        Row: {
+          content: Json
+          created_at: string | null
+          created_by: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          tenant_id: string
+          version: number
+        }
+        Insert: {
+          content: Json
+          created_at?: string | null
+          created_by?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          tenant_id: string
+          version: number
+        }
+        Update: {
+          content?: Json
+          created_at?: string | null
+          created_by?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          tenant_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revisions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           allowed_domains: string[] | null
@@ -185,10 +602,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_tenant_id: { Args: never; Returns: string }
+      is_super_admin: { Args: never; Returns: boolean }
     }
     Enums: {
+      category_type: "project" | "article"
       content_status: "draft" | "published" | "archived"
+      page_type: "home" | "about" | "contact"
       user_role: "super_admin" | "admin" | "editor"
     }
     CompositeTypes: {
@@ -317,7 +737,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      category_type: ["project", "article"],
       content_status: ["draft", "published", "archived"],
+      page_type: ["home", "about", "contact"],
       user_role: ["super_admin", "admin", "editor"],
     },
   },
