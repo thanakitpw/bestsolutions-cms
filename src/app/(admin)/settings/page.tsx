@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Save } from 'lucide-react';
+import Link from 'next/link';
+import { Save, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -125,6 +126,23 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Settings Navigation */}
+      <div className="rounded-lg border border-[#E5E4E2] bg-white p-4">
+        <h2 className="mb-3 text-[13px] font-semibold text-[#999] uppercase tracking-wider">การจัดการ</h2>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <Link
+            href="/settings/categories"
+            className="flex items-center gap-3 p-3 rounded-md border border-[#E5E4E2] hover:border-[#1A1A1A] hover:bg-[#F9F9F8] transition-colors"
+          >
+            <Tag className="h-5 w-5 text-[#999]" />
+            <div>
+              <p className="text-sm font-medium text-[#1A1A1A]">Categories</p>
+              <p className="text-xs text-[#999]">จัดการ categories สำหรับ Projects และ Articles</p>
+            </div>
+          </Link>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>

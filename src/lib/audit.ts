@@ -1,4 +1,5 @@
 import { createServiceRoleClient } from '@/lib/supabase/admin'
+import type { Json } from '@/types/database.types'
 
 export async function logAuditEvent(
   action: string,
@@ -6,7 +7,7 @@ export async function logAuditEvent(
   entityId: string,
   tenantId: string | null,
   userId?: string,
-  metadata?: Record<string, unknown>
+  metadata?: Json
 ): Promise<void> {
   try {
     const supabase = createServiceRoleClient()
