@@ -45,7 +45,7 @@ development_status:
   # ─── Epic 1: Foundation — Project Setup, Auth & Admin Shell ───
   epic-1: in-progress
   1-1-initialize-project-and-core-database-schema: review
-  1-2-core-library-infrastructure: backlog
+  1-2-core-library-infrastructure: review
   1-3-login-logout-and-auth-middleware: backlog
   1-4-admin-shell-design-system-and-sidebar-layout: backlog
   1-5-dashboard-rbac-and-tenant-switcher: backlog
