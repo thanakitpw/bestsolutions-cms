@@ -1,0 +1,97 @@
+# generated: 2026-04-09
+# last_updated: 2026-04-09T15:40:00
+# project: bestsolutions-cms
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-04-09
+last_updated: 2026-04-09
+project: bestsolutions-cms
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # ─── Epic 1: Foundation — Project Setup, Auth & Admin Shell ───
+  epic-1: in-progress
+  1-1-initialize-project-and-core-database-schema: review
+  1-2-core-library-infrastructure: backlog
+  1-3-login-logout-and-auth-middleware: backlog
+  1-4-admin-shell-design-system-and-sidebar-layout: backlog
+  1-5-dashboard-rbac-and-tenant-switcher: backlog
+  epic-1-retrospective: optional
+
+  # ─── Epic 2: Projects Content Management ───
+  epic-2: backlog
+  2-1-content-database-schema-and-rls-policies: backlog
+  2-2-categories-management: backlog
+  2-3-media-library-upload-view-and-delete: backlog
+  2-4-tiptapeditor-with-multi-locale-and-auto-save: backlog
+  2-5-mediapicker-connect-editor-to-media-library: backlog
+  2-6-projects-list-and-create: backlog
+  2-7-projects-edit-seo-publish-and-delete: backlog
+  epic-2-retrospective: optional
+
+  # ─── Epic 3: Articles (Blog) Content Management ───
+  epic-3: backlog
+  3-1-articles-list-and-create: backlog
+  3-2-articles-edit-seo-and-cover-image: backlog
+  3-3-articles-publish-and-delete: backlog
+  epic-3-retrospective: optional
+
+  # ─── Epic 4: Messages Inbox & Contact Notifications ───
+  epic-4: backlog
+  4-1-contact-form-api-endpoint: backlog
+  4-2-notification-on-new-message: backlog
+  4-3-messages-inbox-management: backlog
+  epic-4-retrospective: optional
+
+  # ─── Epic 5: Site Settings & Configuration ───
+  epic-5: backlog
+  5-1-site-identity-and-seo-settings: backlog
+  5-2-notification-channels-and-ga-configuration: backlog
+  epic-5-retrospective: optional
+
+  # ─── Epic 6: Public Headless API ───
+  epic-6: backlog
+  6-1-projects-and-articles-public-endpoints: backlog
+  6-2-settings-and-cors-validation: backlog
+  6-3-contact-form-and-response-caching: backlog
+  epic-6-retrospective: optional
+
+  # ─── Epic 7: Production Go-Live ───
+  epic-7: backlog
+  7-1-rls-isolation-test-suite: backlog
+  7-2-vercel-deployment-and-environment-setup: backlog
+  7-3-performance-validation-and-go-live: backlog
+  epic-7-retrospective: optional
