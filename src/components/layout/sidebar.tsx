@@ -18,6 +18,7 @@ export type SidebarProps = {
   user: { email: string; role: string }
   enabledFeatures: string[]
   isSuperAdmin: boolean
+  tenantSwitcherSlot?: React.ReactNode
 }
 
 const linkClasses = (active: boolean, collapsed: boolean) =>
@@ -77,7 +78,7 @@ function SidebarItem({
   )
 }
 
-export function Sidebar({ user, enabledFeatures, isSuperAdmin }: SidebarProps) {
+export function Sidebar({ user, enabledFeatures, isSuperAdmin, tenantSwitcherSlot }: SidebarProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
 
@@ -118,6 +119,13 @@ export function Sidebar({ user, enabledFeatures, isSuperAdmin }: SidebarProps) {
           )}
         </button>
       </div>
+
+      {/* Tenant Switcher Slot */}
+      {tenantSwitcherSlot && (
+        <div className="border-b border-sidebar-border shrink-0">
+          {tenantSwitcherSlot}
+        </div>
+      )}
 
       {/* Nav sections */}
       <nav className="flex-1 overflow-y-auto py-4 px-2" aria-label="เมนูนำทาง">

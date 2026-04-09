@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { createServerClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/sidebar'
 import { MobileSidebar } from '@/components/layout/mobile-sidebar'
+import { TenantSwitcher } from '@/components/layout/tenant-switcher'
 
 export default async function AdminLayout({
   children,
@@ -21,8 +23,8 @@ export default async function AdminLayout({
       role,
       tenant_id,
       tenants (
-        enabled_features,
-        slug
+        name,
+        enabled_features
       )
     `)
     .eq('id', user.id)
@@ -30,13 +32,28 @@ export default async function AdminLayout({
 
   const isSuperAdmin = profile?.role === 'super_admin'
   const enabledFeatures =
-    (profile?.tenants as { enabled_features: string[] } | null)
+    (profile?.tenants as { name: string; enabled_features: string[] } | null)
       ?.enabled_features ?? []
+  const currentTenantName =
+    (profile?.tenants as { name: string } | null)?.name
+
+  // super_admin: active tenant จาก cookie
+  const cookieStore = await cookies()
+  const activeTenantId = cookieStore.get('active_tenant_id')?.value
+
+  const tenantSwitcherSlot = (
+    <TenantSwitcher
+      isSuperAdmin={isSuperAdmin}
+      activeTenantId={activeTenantId}
+      currentTenantName={currentTenantName}
+    />
+  )
 
   const sidebarProps = {
     user: { email: user.email!, role: profile?.role ?? 'editor' },
     enabledFeatures,
     isSuperAdmin,
+    tenantSwitcherSlot,
   }
 
   return (
