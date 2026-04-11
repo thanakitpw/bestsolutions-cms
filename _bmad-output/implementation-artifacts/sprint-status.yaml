@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-09
-last_updated: 2026-04-09T23:30:00
+last_updated: 2026-04-11T18:00:00
 project: bestsolutions-cms
 project_key: NOKEY
 tracking_system: file-system
@@ -56,17 +56,17 @@ development_status:
   2-1-content-database-schema-and-rls-policies: review
   2-2-categories-management: review
   2-3-media-library-upload-view-and-delete: review
-  2-4-tiptapeditor-with-multi-locale-and-auto-save: backlog
-  2-5-mediapicker-connect-editor-to-media-library: backlog
-  2-6-projects-list-and-create: backlog
-  2-7-projects-edit-seo-publish-and-delete: backlog
+  2-4-tiptapeditor-with-multi-locale-and-auto-save: review
+  2-5-mediapicker-connect-editor-to-media-library: review
+  2-6-projects-list-and-create: review
+  2-7-projects-edit-seo-publish-and-delete: review
   epic-2-retrospective: optional
 
   # ─── Epic 3: Articles (Blog) Content Management ───
-  epic-3: backlog
-  3-1-articles-list-and-create: backlog
-  3-2-articles-edit-seo-and-cover-image: backlog
-  3-3-articles-publish-and-delete: backlog
+  epic-3: in-progress
+  3-1-articles-list-and-create: review
+  3-2-articles-edit-seo-and-cover-image: review
+  3-3-articles-publish-and-delete: review
   epic-3-retrospective: optional
 
   # ─── Epic 4: Messages Inbox & Contact Notifications ───

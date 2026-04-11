@@ -1,58 +1,147 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@/lib/supabase/server'
+import { requireRole } from '@/lib/auth'
+import { getTenantId } from '@/lib/tenant'
+import { ProjectUpdateSchema } from '@/lib/validations/project'
 
-// GET /api/admin/projects/[id]
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-  const { data, error } = await supabaseAdmin
-    .from('projects')
-    .select('*')
-    .eq('id', id)
-    .single();
+type RouteParams = { params: Promise<{ id: string }> }
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 404 });
+export async function GET(_request: NextRequest, { params }: RouteParams) {
+  const { response } = await requireRole('editor')
+  if (response) return response
+
+  let tenantId: string
+  try {
+    tenantId = await getTenantId()
+  } catch {
+    return NextResponse.json(
+      { error: 'No tenant selected', code: 'TENANT_NOT_SELECTED' },
+      { status: 400 }
+    )
   }
-  return NextResponse.json(data);
+
+  const { id } = await params
+  const supabase = createServerClient()
+
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*, category:categories(id, name)')
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
+    .single()
+
+  if (error || !data) {
+    return NextResponse.json({ error: 'Project not found', code: 'NOT_FOUND' }, { status: 404 })
+  }
+
+  return NextResponse.json(data)
 }
 
-// PUT /api/admin/projects/[id]
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-  const body = await request.json();
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  const { response } = await requireRole('editor')
+  if (response) return response
 
-  const { data, error } = await supabaseAdmin
+  let tenantId: string
+  try {
+    tenantId = await getTenantId()
+  } catch {
+    return NextResponse.json(
+      { error: 'No tenant selected', code: 'TENANT_NOT_SELECTED' },
+      { status: 400 }
+    )
+  }
+
+  const { id } = await params
+  const body = await request.json()
+
+  const parsed = ProjectUpdateSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Validation failed', code: 'VALIDATION_ERROR', details: parsed.error.flatten() },
+      { status: 422 }
+    )
+  }
+
+  const updateData = parsed.data
+  const supabase = createServerClient()
+
+  // Slug conflict check
+  if (updateData.slug) {
+    const { data: conflict } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('slug', updateData.slug)
+      .is('deleted_at', null)
+      .neq('id', id)
+      .maybeSingle()
+
+    if (conflict) {
+      return NextResponse.json(
+        { error: 'Slug already exists', code: 'SLUG_CONFLICT' },
+        { status: 409 }
+      )
+    }
+  }
+
+  // ถ้า status เปลี่ยนเป็น published → set published_at ถ้ายังไม่มี
+  let autoPublishedAt: string | undefined
+  if (updateData.status === 'published') {
+    const { data: current } = await supabase
+      .from('projects')
+      .select('published_at')
+      .eq('id', id)
+      .eq('tenant_id', tenantId)
+      .single()
+    if (current && !current.published_at) {
+      autoPublishedAt = new Date().toISOString()
+    }
+  }
+
+  const { data, error } = await supabase
     .from('projects')
-    .update(body)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update({ ...updateData, ...(autoPublishedAt ? { published_at: autoPublishedAt } : {}) } as any)
     .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
     .select()
-    .single();
+    .single()
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error || !data) {
+    return NextResponse.json({ error: 'Update failed', code: 'DB_ERROR' }, { status: 500 })
   }
-  return NextResponse.json(data);
+
+  return NextResponse.json(data)
 }
 
-// DELETE /api/admin/projects/[id]
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-  const { error } = await supabaseAdmin
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+  const { response } = await requireRole('admin')
+  if (response) return response
+
+  let tenantId: string
+  try {
+    tenantId = await getTenantId()
+  } catch {
+    return NextResponse.json(
+      { error: 'No tenant selected', code: 'TENANT_NOT_SELECTED' },
+      { status: 400 }
+    )
+  }
+
+  const { id } = await params
+  const supabase = createServerClient()
+
+  const { error } = await supabase
     .from('projects')
-    .delete()
-    .eq('id', id);
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Delete failed', code: 'DB_ERROR' }, { status: 500 })
   }
-  return NextResponse.json({ success: true });
+
+  return NextResponse.json({ success: true })
 }

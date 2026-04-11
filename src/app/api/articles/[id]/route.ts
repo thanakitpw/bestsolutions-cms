@@ -1,24 +1,148 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@/lib/supabase/server'
+import { requireRole } from '@/lib/auth'
+import { getTenantId } from '@/lib/tenant'
+import { ArticleUpdateSchema } from '@/lib/validations/article'
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const { data, error } = await supabaseAdmin.from('articles').select('*').eq('id', id).single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 404 });
-  return NextResponse.json(data);
+type RouteParams = { params: Promise<{ id: string }> }
+
+export async function GET(_request: NextRequest, { params }: RouteParams) {
+  const { response } = await requireRole('editor')
+  if (response) return response
+
+  let tenantId: string
+  try {
+    tenantId = await getTenantId()
+  } catch {
+    return NextResponse.json(
+      { error: 'No tenant selected', code: 'TENANT_NOT_SELECTED' },
+      { status: 400 }
+    )
+  }
+
+  const { id } = await params
+  const supabase = createServerClient()
+
+  const { data, error } = await supabase
+    .from('articles')
+    .select('*, category:categories(id, name)')
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
+    .single()
+
+  if (error || !data) {
+    return NextResponse.json({ error: 'Article not found', code: 'NOT_FOUND' }, { status: 404 })
+  }
+
+  return NextResponse.json(data)
 }
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const body = await request.json();
-  const { data, error } = await supabaseAdmin.from('articles').update(body).eq('id', id).select().single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  const { response } = await requireRole('editor')
+  if (response) return response
+
+  let tenantId: string
+  try {
+    tenantId = await getTenantId()
+  } catch {
+    return NextResponse.json(
+      { error: 'No tenant selected', code: 'TENANT_NOT_SELECTED' },
+      { status: 400 }
+    )
+  }
+
+  const { id } = await params
+  const body = await request.json()
+
+  const parsed = ArticleUpdateSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Validation failed', code: 'VALIDATION_ERROR', details: parsed.error.flatten() },
+      { status: 422 }
+    )
+  }
+
+  const updateData = parsed.data
+  const supabase = createServerClient()
+
+  // Slug conflict check
+  if (updateData.slug) {
+    const { data: conflict } = await supabase
+      .from('articles')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('slug', updateData.slug)
+      .is('deleted_at', null)
+      .neq('id', id)
+      .maybeSingle()
+
+    if (conflict) {
+      return NextResponse.json(
+        { error: 'Slug already exists', code: 'SLUG_CONFLICT' },
+        { status: 409 }
+      )
+    }
+  }
+
+  // published_at auto-set
+  let autoPublishedAt: string | undefined
+  if (updateData.status === 'published') {
+    const { data: current } = await supabase
+      .from('articles')
+      .select('published_at')
+      .eq('id', id)
+      .eq('tenant_id', tenantId)
+      .single()
+    if (current && !current.published_at) {
+      autoPublishedAt = new Date().toISOString()
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('articles')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update({ ...updateData, ...(autoPublishedAt ? { published_at: autoPublishedAt } : {}) } as any)
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
+    .select()
+    .single()
+
+  if (error || !data) {
+    return NextResponse.json({ error: 'Update failed', code: 'DB_ERROR' }, { status: 500 })
+  }
+
+  return NextResponse.json(data)
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const { error } = await supabaseAdmin.from('articles').delete().eq('id', id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true });
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+  const { response } = await requireRole('admin')
+  if (response) return response
+
+  let tenantId: string
+  try {
+    tenantId = await getTenantId()
+  } catch {
+    return NextResponse.json(
+      { error: 'No tenant selected', code: 'TENANT_NOT_SELECTED' },
+      { status: 400 }
+    )
+  }
+
+  const { id } = await params
+  const supabase = createServerClient()
+
+  const { error } = await supabase
+    .from('articles')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
+
+  if (error) {
+    return NextResponse.json({ error: 'Delete failed', code: 'DB_ERROR' }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true })
 }

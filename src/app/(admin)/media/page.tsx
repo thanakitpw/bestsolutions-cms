@@ -28,7 +28,7 @@ export default async function MediaPage() {
         <h1 className="text-2xl font-bold text-[#1A1A1A]">Media Library</h1>
         <p className="text-[13px] text-[#999]">จัดการรูปภาพและไฟล์ทั้งหมด</p>
       </div>
-      <MediaLibrary initialItems={initialItems ?? []} tenantId={tenantId} />
+      <MediaLibrary initialItems={(initialItems ?? []) as import('@/components/media/media-library').MediaItem[]} tenantId={tenantId} />
     </div>
   )
 }

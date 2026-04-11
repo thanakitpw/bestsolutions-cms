@@ -1,154 +1,208 @@
-'use client';
+import Link from 'next/link'
+import { assertRole } from '@/lib/auth'
+import { getTenantId } from '@/lib/tenant'
+import { createServerClient } from '@/lib/supabase/server'
+import { getLocaleValue } from '@/lib/i18n'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { ArticlesFilters } from './_components/articles-filters'
+import { NewArticleDialog } from './_components/new-article-dialog'
 
-import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+type SearchParams = Promise<{
+  search?: string
+  category_id?: string
+  status?: string
+  page?: string
+}>
 
-interface Article {
-  id: string;
-  title_en: string;
-  title_th: string;
-  slug: string;
-  category: string;
-  status: string;
-  published_at: string | null;
-}
+export default async function BlogListPage({ searchParams }: { searchParams: SearchParams }) {
+  await assertRole('editor')
 
-const CATEGORIES = ['all', 'Design Trends', 'Behind the Scenes', 'Tips', 'Studio Life'];
+  let tenantId: string
+  try {
+    tenantId = await getTenantId()
+  } catch {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 text-muted-foreground">
+        <p className="text-sm">กรุณาเลือก tenant ก่อนเข้าถึงหน้า Blog</p>
+        <Link href="/" className="text-sm text-primary underline underline-offset-2">
+          กลับไปหน้า Dashboard
+        </Link>
+      </div>
+    )
+  }
 
-export default function BlogListPage() {
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('all');
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const params = await searchParams
+  const search = params.search ?? ''
+  const categoryId = params.category_id ?? 'all'
+  const status = params.status ?? 'all'
+  const page = Math.max(1, Number(params.page ?? 1))
+  const limit = 12
 
-  const fetchArticles = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams({ page: String(page), limit: '10', category, search });
-    const res = await fetch(`/api/admin/articles?${params}`);
-    const data = await res.json();
-    setArticles(data.articles ?? []);
-    setTotal(data.total ?? 0);
-    setTotalPages(data.totalPages ?? 1);
-    setLoading(false);
-  }, [page, category, search]);
+  const supabase = createServerClient()
 
-  useEffect(() => { fetchArticles(); }, [fetchArticles]);
+  const [categoriesResult, articlesResult] = await Promise.all([
+    supabase
+      .from('categories')
+      .select('id, name')
+      .eq('tenant_id', tenantId)
+      .eq('type', 'article')
+      .order('sort_order', { ascending: true }),
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    await fetch(`/api/admin/articles/${deleteId}`, { method: 'DELETE' });
-    setDeleteId(null);
-    fetchArticles();
-  };
+    (() => {
+      let q = supabase
+        .from('articles')
+        .select(
+          'id, title, slug, status, cover_image_url, created_at, published_at, category:categories(id, name)',
+          { count: 'exact' }
+        )
+        .eq('tenant_id', tenantId)
+        .is('deleted_at', null)
+        .order('published_at', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false })
+
+      if (search) {
+        q = q.or(
+          `slug.ilike.%${search}%,title->>th.ilike.%${search}%,title->>en.ilike.%${search}%`
+        )
+      }
+      if (categoryId !== 'all') q = q.eq('category_id', categoryId)
+      if (status !== 'all') q = q.eq('status', status as 'draft' | 'published' | 'archived')
+
+      return q.range((page - 1) * limit, page * limit - 1)
+    })(),
+  ])
+
+  const categories = categoriesResult.data ?? []
+  const articles = articlesResult.data ?? []
+  const total = articlesResult.count ?? 0
+  const totalPages = Math.ceil(total / limit)
 
   const formatDate = (d: string | null) => {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-  };
+    if (!d) return '—'
+    return new Date(d).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })
+  }
+
+  const statusBadgeVariant = (s: string) => {
+    if (s === 'published') return 'default' as const
+    if (s === 'archived') return 'secondary' as const
+    return 'outline' as const
+  }
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#1A1A1A]">Blog Articles</h1>
-          <p className="text-[13px] text-[#999]">Manage your blog content</p>
+          <h1 className="text-2xl font-bold">Blog Articles</h1>
+          <p className="text-sm text-muted-foreground">
+            จัดการบทความทั้งหมด {total > 0 && `(${total} รายการ)`}
+          </p>
         </div>
-        <Link href="/admin/blog/new">
-          <Button>+ New Article</Button>
-        </Link>
+        <NewArticleDialog categories={categories as { id: string; name: { th?: string; en?: string } }[]} />
       </div>
 
-      <div className="flex items-center gap-3">
-        <Input
-          placeholder="Search articles..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="max-w-[300px]"
-        />
-        <div className="flex gap-1.5">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => { setCategory(cat); setPage(1); }}
-              className={`rounded-full border px-3 py-1 text-[11px] font-medium transition-colors ${
-                category === cat
-                  ? 'border-[#1A1A1A] bg-[#1A1A1A] text-white'
-                  : 'border-[#E5E4E2] bg-white text-[#999] hover:border-[#999]'
-              }`}
+      {/* Filters */}
+      <ArticlesFilters
+        categories={categories as { id: string; name: { th?: string; en?: string } }[]}
+        currentSearch={search}
+        currentCategoryId={categoryId}
+        currentStatus={status}
+      />
+
+      {/* Table */}
+      <div className="rounded-lg border border-border bg-card">
+        <div className="grid grid-cols-[1fr_160px_110px_100px_80px] gap-3 border-b border-border bg-muted/40 px-4 py-2.5">
+          {['ชื่อบทความ', 'หมวดหมู่', 'วันที่เผยแพร่', 'สถานะ', ''].map((h) => (
+            <span
+              key={h}
+              className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
             >
-              {cat === 'all' ? 'All' : cat}
-            </button>
+              {h}
+            </span>
           ))}
         </div>
-      </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <div className="flex border-b border-[#E5E4E2] bg-[#FAFAF8] px-5 py-3">
-            <span className="w-[320px] text-[10px] uppercase tracking-[0.1em] text-[#999]">Article</span>
-            <span className="w-[150px] text-[10px] uppercase tracking-[0.1em] text-[#999]">Category</span>
-            <span className="w-[100px] text-[10px] uppercase tracking-[0.1em] text-[#999]">Date</span>
-            <span className="w-[80px] text-[10px] uppercase tracking-[0.1em] text-[#999]">Status</span>
-            <span className="flex-1 text-[10px] uppercase tracking-[0.1em] text-[#999]">Actions</span>
+        {articles.length === 0 ? (
+          <div className="py-16 text-center text-sm text-muted-foreground">
+            {search || categoryId !== 'all' || status !== 'all'
+              ? 'ไม่พบบทความที่ตรงกับการค้นหา'
+              : 'ยังไม่มีบทความ กด "New Article" เพื่อสร้างบทความแรก'}
           </div>
-          {loading ? (
-            <div className="py-12 text-center text-[13px] text-[#999]">Loading...</div>
-          ) : articles.length === 0 ? (
-            <div className="py-12 text-center text-[13px] text-[#999]">No articles found</div>
-          ) : (
-            articles.map((article) => (
-              <div key={article.id} className="flex items-center border-b border-[#F0EFED] px-5 py-3.5 transition-colors hover:bg-[#FAFAF8]">
-                <span className="w-[320px] text-[13px] font-bold text-[#1A1A1A]">{article.title_en}</span>
-                <span className="w-[150px] text-[11px] text-[#6B6B6B]">{article.category}</span>
-                <span className="w-[100px] text-[12px] text-[#6B6B6B]">{formatDate(article.published_at)}</span>
-                <span className="w-[80px]">
-                  <Badge variant="secondary" className={article.status === 'published' ? 'text-[10px]' : 'bg-[#F1C40F]/8 text-[10px] text-[#F1C40F]'}>
-                    {article.status}
-                  </Badge>
-                </span>
-                <div className="flex flex-1 gap-2">
-                  <Link href={`/admin/blog/${article.id}`} className="text-[11px] text-[#2471A3] hover:underline">Edit</Link>
-                  <span className="text-[11px] text-[#999]">·</span>
-                  <button onClick={() => setDeleteId(article.id)} className="text-[11px] text-[#C0392B] hover:underline">Delete</button>
-                </div>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+        ) : (
+          articles.map((article) => {
+            const title =
+              getLocaleValue(article.title as Record<string, string>, 'th') ||
+              getLocaleValue(article.title as Record<string, string>, 'en') ||
+              '(ไม่มีชื่อ)'
+            const categoryName = article.category
+              ? getLocaleValue(
+                  (article.category as { name: Record<string, string> }).name,
+                  'th'
+                ) ||
+                getLocaleValue(
+                  (article.category as { name: Record<string, string> }).name,
+                  'en'
+                )
+              : null
 
-      <div className="flex items-center justify-between">
-        <span className="text-[12px] text-[#999]">Showing {Math.min((page-1)*10+1, total)}-{Math.min(page*10, total)} of {total} articles</span>
-        <div className="flex gap-1">
-          <Button variant="outline" size="sm" disabled={page<=1} onClick={() => setPage(page-1)}>← Prev</Button>
-          {Array.from({ length: totalPages }, (_, i) => i+1).map((p) => (
-            <Button key={p} variant={p === page ? 'default' : 'outline'} size="sm" onClick={() => setPage(p)}>{p}</Button>
-          ))}
-          <Button variant="outline" size="sm" disabled={page>=totalPages} onClick={() => setPage(page+1)}>Next →</Button>
-        </div>
+            return (
+              <div
+                key={article.id}
+                className="grid grid-cols-[1fr_160px_110px_100px_80px] gap-3 items-center border-b border-border/50 px-4 py-3 transition-colors last:border-0 hover:bg-muted/30"
+              >
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="truncate text-sm font-medium">{title}</span>
+                  <span className="truncate text-xs text-muted-foreground">{article.slug}</span>
+                </div>
+                <span className="text-sm text-muted-foreground truncate">
+                  {categoryName ?? <span className="text-muted-foreground/50">—</span>}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(article.published_at)}
+                </span>
+                <Badge
+                  variant={statusBadgeVariant(article.status ?? 'draft')}
+                  className="w-fit text-[10px]"
+                >
+                  {article.status}
+                </Badge>
+                <Link
+                  href={`/blog/${article.id}`}
+                  className="text-xs text-primary hover:underline underline-offset-2"
+                >
+                  Edit
+                </Link>
+              </div>
+            )
+          })
+        )}
       </div>
 
-      <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Article</DialogTitle>
-            <DialogDescription>Are you sure? This cannot be undone.</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
+            หน้า {page} จาก {totalPages} ({total} รายการ)
+          </span>
+          <div className="flex gap-1">
+            {page > 1 && (
+              <Link
+                href={`?${new URLSearchParams({ ...params, page: String(page - 1) })}`}
+              >
+                <Button variant="outline" size="sm">← ก่อนหน้า</Button>
+              </Link>
+            )}
+            {page < totalPages && (
+              <Link
+                href={`?${new URLSearchParams({ ...params, page: String(page + 1) })}`}
+              >
+                <Button variant="outline" size="sm">ถัดไป →</Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </div>
-  );
+  )
 }

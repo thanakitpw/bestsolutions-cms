@@ -1,40 +1,132 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@/lib/supabase/server'
+import { requireRole } from '@/lib/auth'
+import { getTenantId } from '@/lib/tenant'
+import { ArticleCreateSchema } from '@/lib/validations/article'
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
-  const category = searchParams.get('category');
-  const status = searchParams.get('status');
-  const search = searchParams.get('search');
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '10');
-  const offset = (page - 1) * limit;
+  const { response } = await requireRole('editor')
+  if (response) return response
 
-  let query = supabaseAdmin
+  let tenantId: string
+  try {
+    tenantId = await getTenantId()
+  } catch {
+    return NextResponse.json(
+      { error: 'No tenant selected', code: 'TENANT_NOT_SELECTED' },
+      { status: 400 }
+    )
+  }
+
+  const { searchParams } = new URL(request.url)
+  const search = searchParams.get('search')?.trim() ?? ''
+  const categoryId = searchParams.get('category_id') ?? 'all'
+  const status = searchParams.get('status') ?? 'all'
+  const page = Math.max(1, Number(searchParams.get('page') ?? 1))
+  const limit = Math.min(Number(searchParams.get('limit') ?? 12), 50)
+  const offset = (page - 1) * limit
+
+  const supabase = createServerClient()
+
+  let query = supabase
     .from('articles')
-    .select('*', { count: 'exact' })
-    .order('published_at', { ascending: false, nullsFirst: false });
+    .select(
+      'id, title, slug, excerpt, status, cover_image_url, created_at, published_at, category:categories(id, name)',
+      { count: 'exact' }
+    )
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
+    .order('published_at', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
 
-  if (category && category !== 'all') query = query.eq('category', category);
-  if (status && status !== 'all') query = query.eq('status', status);
-  if (search) query = query.or(`title_en.ilike.%${search}%,title_th.ilike.%${search}%`);
-  query = query.range(offset, offset + limit - 1);
+  if (search) {
+    query = query.or(
+      `slug.ilike.%${search}%,title->>th.ilike.%${search}%,title->>en.ilike.%${search}%`
+    )
+  }
+  if (categoryId !== 'all') query = query.eq('category_id', categoryId)
+  if (status !== 'all') query = query.eq('status', status as 'draft' | 'published' | 'archived')
 
-  const { data, count, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  query = query.range(offset, offset + limit - 1)
+
+  const { data, count, error } = await query
+
+  if (error) {
+    return NextResponse.json(
+      { error: 'Failed to fetch articles', code: 'DB_ERROR' },
+      { status: 500 }
+    )
+  }
 
   return NextResponse.json({
-    articles: data,
-    total: count,
+    data: data ?? [],
+    total: count ?? 0,
     page,
     limit,
     totalPages: Math.ceil((count ?? 0) / limit),
-  });
+  })
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { data, error } = await supabaseAdmin.from('articles').insert(body).select().single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
+  const { response } = await requireRole('editor')
+  if (response) return response
+
+  let tenantId: string
+  try {
+    tenantId = await getTenantId()
+  } catch {
+    return NextResponse.json(
+      { error: 'No tenant selected', code: 'TENANT_NOT_SELECTED' },
+      { status: 400 }
+    )
+  }
+
+  const body = await request.json()
+  const parsed = ArticleCreateSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Validation failed', code: 'VALIDATION_ERROR', details: parsed.error.flatten() },
+      { status: 422 }
+    )
+  }
+
+  const { title, slug, category_id } = parsed.data
+  const supabase = createServerClient()
+
+  // Slug uniqueness check within tenant
+  const { data: existing } = await supabase
+    .from('articles')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .eq('slug', slug)
+    .is('deleted_at', null)
+    .maybeSingle()
+
+  if (existing) {
+    return NextResponse.json(
+      { error: 'Slug already exists', code: 'SLUG_CONFLICT' },
+      { status: 409 }
+    )
+  }
+
+  const { data, error } = await supabase
+    .from('articles')
+    .insert({
+      tenant_id: tenantId,
+      title,
+      slug,
+      category_id: category_id ?? null,
+      status: 'draft',
+    })
+    .select()
+    .single()
+
+  if (error) {
+    return NextResponse.json(
+      { error: 'Failed to create article', code: 'DB_ERROR' },
+      { status: 500 }
+    )
+  }
+
+  return NextResponse.json(data, { status: 201 })
 }
